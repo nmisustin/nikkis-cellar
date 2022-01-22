@@ -16,7 +16,7 @@ app.get("/cellar", async function (req, res) {
   const scanResults = [];
   try {
     do {
-      const items = await documentClient.scan(params).promise();
+      const items = await dynamoDbClient.scan(params).promise();
       items.Items.forEach((item) => scanResults.push(item));
       params.ExclusiveStartKey = items.LastEvaluatedKey;
     } while (typeof items.LastEvaluatedKey !== "undefined");
