@@ -9,6 +9,25 @@ const dynamoDbClient = new AWS.DynamoDB.DocumentClient();
 
 app.use(express.json());
 
+app.get("/cellar", async function (req, res) {
+  const params = {
+    TableName: CELLAR_TABLE
+  };
+  const scanResults = [];
+  try {
+    do {
+      const items = await documentClient.scan(params).promise();
+      items.Items.forEach((item) => scanResults.push(item));
+      params.ExclusiveStartKey = items.LastEvaluatedKey;
+    } while (typeof items.LastEvaluatedKey !== "undefined");
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Could not retreive cellar" });
+  }
+  res.status(200).json(scanResults);
+}
+
+)
 app.get("/cellar/:id", async function (req, res) {
   const params = {
     TableName: CELLAR_TABLE,
