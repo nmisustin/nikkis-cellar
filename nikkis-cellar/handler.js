@@ -15,12 +15,13 @@ app.get("/cellar", async function (req, res) {
   };
   const scanResults = [];
   try {
-    const items;
-    do {
-      items = await dynamoDbClient.scan(params).promise();
-      items.Items.forEach((item) => scanResults.push(item));
-      params.ExclusiveStartKey = items.LastEvaluatedKey;
-    } while (typeof items.LastEvaluatedKey !== "undefined");
+    for (;;) {
+      const { Items, LastEvaluatedKey } = await dynamoDbClient.scan(params).promise();
+      Items.forEach((item) => scanResults.push(item));
+      if (!LastEvaluatedKey)
+        break;
+      params.ExclusiveStartKey = LastEvaluatedKey;
+    }
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Could not retreive cellar" });
@@ -40,12 +41,9 @@ app.get("/cellar/:id", async function (req, res) {
   try {
     const { Item } = await dynamoDbClient.get(params).promise();
     if (Item) {
-      const { id, vintage, winery, subblock, varietal, quantity, rating, notes } = Item;
-      res.json({ id, vintage, winery, subblock, varietal, quantity, rating, notes });
+      res.json(Item);
     } else {
-      res
-        .status(404)
-        .json({ error: 'Could not find bottle with provided "id"' });
+      res.status(404).json({ error: 'Could not find bottle with provided "id"' });
     }
   } catch (error) {
     console.log(error);
